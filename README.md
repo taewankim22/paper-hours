@@ -18,12 +18,27 @@ npm run dev
 Open the local URL printed by Next.js. Use `http://127.0.0.1:5173/?fallback=1` for the tested rendering path. Port 5173 is preserved so existing plans on that exact local origin remain available.
 
 ```sh
-npm test         # 19 planner and native-adapter regression tests
+npm test         # 23 planner, native-adapter and paper-geometry tests
 npm run typecheck # Standalone TypeScript check
 npm run build   # Next.js production build and static export in out/
 npm start       # Serve the exported site on http://127.0.0.1:5173
 npm run preview # Alias for npm start
 ```
+
+## Single-page paper prototype
+
+Open `/paper-lab/` locally or [the hosted paper lab](https://paper-hours-study-planner.halegoby4.chatgpt.site/paper-lab/).
+
+- Drag the pink corner upward/left to curl the page; release to settle. **Hold the curl** keeps it bent for editing. The slider and arrow keys on the corner are accessible alternatives.
+- Enter text and toggle the checkbox. Each has a session indicator below the controls; values persist under `paper-hours-paper-lab-v1`, separately from planner data.
+- Native mode uses `THREE.HTMLTexture` and the existing Chrome upload adapter on a subdivided mesh. CPU cylinder deformation preserves horizontal arc length, pins the spine, and keeps rendered geometry identical to raycast geometry. It is a controlled curl, not a cloth simulation or full page-turn system.
+- Pointer interaction is an explicit **raycast-to-DOM bridge**, not automatic native curved hit-testing: pointer-down focuses the real input and positions its caret, selection drag updates its selection, and checkbox release activates the real checkbox. Keyboard, composition and React input events stay attached to real DOM controls. Hidden front controls cannot be clicked through the reverse side.
+- A compatible Chrome implementation and `chrome://flags/#canvas-draw-element` are required. The API remains experimental. A first-paint timeout, render error, or context loss switches to a labeled fallback. Use `/paper-lab/?fallback=1` to select it directly.
+- Fallback shows an untextured 3D paper-motion preview beside a real flat HTML editor. It deliberately does not claim that the fallback form is rendered on the curved mesh, and uses no screenshot rasterization library.
+
+Validation on October 12, 2026: TypeScript and 23 tests pass. In the available in-app browser, native APIs were unavailable. Fallback typing, checkbox activation, reload persistence, corner dragging, keyboard curl controls and settling were checked in-browser. Native texture rendering, pointer mapping, selection and Korean IME composition still require an API-enabled Chrome test; code and capability detection are not runtime verification. Test those before merging this experiment into the notebook.
+
+Implementation: `src/paper-lab/` and `src/app/paper-lab/`. Concept references: [fimbox cloth](https://github.com/fimbox/html-in-canvas/blob/main/plugins/html-cloth.mjs), [Jake Archibald curved markup](https://github.com/jakearchibald/random-stuff/tree/main/apps/curved-markup), and [Chrome API changes](https://developer.chrome.com/blog/html-in-canvas-ot-changes). The paper geometry and bridge here are independently implemented for the existing Three.js app.
 
 ## Next.js architecture and deployment
 
