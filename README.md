@@ -1,12 +1,12 @@
 # Paper Hours
 
-An interactive 3D study planner built with React, TypeScript, Vite, Three.js, React Three Fiber, Drei, and Zustand. Rotate a spiral notebook, edit real HTML controls, organize tasks and study periods, and save your plans in your browser.
+An interactive 3D study planner built with Next.js 16 App Router, React, TypeScript, Three.js, React Three Fiber, Drei, and Zustand. Rotate a spiral notebook, edit real HTML controls, organize tasks and study periods, and save your plans in your browser.
 
 **[Open the live team demo](https://paper-hours-study-planner.halegoby4.chatgpt.site/?fallback=1)** — no sign-in required. This link selects the tested CSS 3D mode.
 
 ## Run locally
 
-Use Node.js 22.12+ (tested with Node 24).
+Use Node.js 20.9+ (tested with Node 24.14.1).
 
 ```sh
 git clone https://github.com/taewankim22/paper-hours.git
@@ -15,13 +15,29 @@ npm ci
 npm run dev
 ```
 
-Open the local URL printed by Vite. Use `http://127.0.0.1:5173/?fallback=1` for the tested rendering path.
+Open the local URL printed by Next.js. Use `http://127.0.0.1:5173/?fallback=1` for the tested rendering path. Port 5173 is preserved so existing plans on that exact local origin remain available.
 
 ```sh
 npm test         # 19 planner and native-adapter regression tests
-npm run build   # TypeScript checks and production bundle in dist/
-npm run preview # Serve the production bundle locally
+npm run typecheck # Standalone TypeScript check
+npm run build   # Next.js production build and static export in out/
+npm start       # Serve the exported site on http://127.0.0.1:5173
+npm run preview # Alias for npm start
 ```
+
+## Next.js architecture and deployment
+
+The App Router owns the root route, document metadata, global styles, loading UI, error boundary, and 404 page. The notebook is loaded through `next/dynamic` with `ssr: false` inside a client component: its experimental API detection, WebGL scene, and localStorage initialization must run only in the browser. Existing reusable planner components and rendering adapters are retained.
+
+`next.config.ts` uses `output: "export"`. Deploy the contents of `out/` to a static host; the existing Sites deployment uses that directory. `npm start` serves this export, not `next start`, which does not support export mode. No server runtime, API routes, authentication, or cloud storage have been added. If those are introduced later, remove export mode and choose a host that runs Next.js server features.
+
+React Strict Mode is temporarily disabled to preserve the existing imperative Three.js / independent React-root lifecycle. Enable it after those resources support development effect replay. This does not disable TypeScript or production validation.
+
+The `paper-hours-v1` storage key and saved-data structure are unchanged. An existing plan remains available on the same origin, including the current demo domain; moving to a different domain or port creates a separate browser storage area.
+
+Vite's application entry, HTML shell, configuration, and direct dependencies have been removed. Vitest may still install Vite transitively as its test engine.
+
+References: [official Vite migration guide](https://nextjs.org/docs/app/guides/migrating/from-vite) and [static export documentation](https://nextjs.org/docs/app/guides/static-exports).
 
 ## Use the planner
 
@@ -57,6 +73,11 @@ Official references:
 
 | File | Responsibility |
 | --- | --- |
+| `src/app/layout.tsx` | Next.js document, metadata, fonts, and styles |
+| `src/app/page.tsx` | App Router home route |
+| `src/app/planner-client.tsx` | Browser-only notebook boundary and loading state |
+| `src/app/error.tsx`, `src/app/not-found.tsx` | Error recovery and missing-page UI |
+| `next.config.ts` | Static export and framework configuration |
 | `src/store.ts` | Structured planner data, persistence, and view state |
 | `src/native.ts` | Experimental API detection |
 | `src/nativeRendering.ts` | Texture uploads and paint/context lifecycle |
@@ -75,7 +96,9 @@ An optional feature-detected WebMCP tool reads planner data from the same browse
 
 ## Validation and known limitations
 
-The production build and 19 automated tests passed. CSS fallback browser checks covered typing, checkboxes, task CRUD, subjects, notes, time-block editing and dragging, date navigation, camera rotation/zoom, reset, and persistence after reload. Mobile and desktop layouts were inspected.
+Next.js migration validation (October 12, 2026): the production static export, standalone TypeScript check, and 19 automated tests passed. The exported app was checked in Chromium for existing saved-data restoration, adding a task, keyboard typing, checkbox completion, subject selection, date arrows, and persistence after reload. The development server also rendered without captured console errors. The dependency audit reported zero vulnerabilities; the local preview server's compression dependency is pinned to its patched release.
+
+Earlier Vite-version checks covered notes, time-block editing and dragging, camera rotation/zoom, reset, and mobile/desktop layout inspection. Those broader checks are historical, not a claim that all were repeated for this migration.
 
 - Native rendering has appeared in the user's experimental Chrome, but native typing remains unconfirmed. Automated adapter tests use mocks and do not replace native browser testing.
 - Pages turn as flat surfaces. CSS pages and WebGL objects do not share a depth buffer, so extreme angles can show compositing differences.

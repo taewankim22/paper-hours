@@ -2,10 +2,19 @@
   box-sizing: border-box;
 }
 html,
-body,
-#root {
+body {
   min-height: 100%;
   margin: 0;
+}
+.planner-loading {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 32px;
+  text-align: center;
 }
 body {
   background: #eeeae5;
